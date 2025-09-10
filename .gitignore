@@ -1,6 +1,5 @@
 /config
 /node_modules
-/src
 /.vscode
 /tsconfig.json
 /todo.md
