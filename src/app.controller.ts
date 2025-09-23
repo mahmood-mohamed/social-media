@@ -1,14 +1,20 @@
-import type { Express } from 'express';
-import authRouter from './modules/auth/auth.controller';
-import connectDB from './DB/connection.db';
+import type { Express, NextFunction, Request, Response } from "express";
+import { connectDB } from "./DB";
+import { AppError } from "./utils";
+import cors from "cors";
+import { authRouter, userRouter } from "./modules";
 
-
-export default function bootstrap (app: Express, express: any) {
+export default function bootstrap(app: Express, express: any) {
   connectDB(); // Connect to the database
   app.use(express.json()); // for parsing application/json
+  app.use(cors({  // Enable CORS for all routes
+    origin: "http://localhost:5173", // Replace with your frontend URL
+    credentials: true,  // Allow cookies to be sent
+  }));
   // authentication routes
-  app.use('/auth', authRouter);
+  app.use("/auth", authRouter);
   // user routes
+  app.use("/user", userRouter);
   // post routes
   // comment routes
   // like routes
@@ -16,9 +22,19 @@ export default function bootstrap (app: Express, express: any) {
   // message routes
   // notification routes
 
-  app.use('/{*dummy}', (req, res, next) => {
-    return res.status(404).json({ success: false, message: 'Route not found' });
+  app.use("/{*dummy}", (req: Request, res: Response, next: NextFunction) => {
+    return res.status(404).json({ success: false, message: "Route not found" });
   });
 
-  
+
+  app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
+    return res
+      .status(err.statusCode || 500)
+      .json({
+        success: false,
+        message: err.message,
+        errorDetails: err.errorDetails,
+        stack: err.stack,
+      });
+  });
 }

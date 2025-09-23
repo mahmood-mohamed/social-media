@@ -1,5 +1,5 @@
 import { ProjectionType, QueryOptions, RootFilterQuery } from "mongoose";
-import { IUser } from "../../../utils/common/interface";
+import { IUser } from "../../../utils";
 import { AbstractRepository } from "../../abstract.repository";
 import { User } from "./user.model";
 
@@ -16,7 +16,7 @@ export class UserRepository extends AbstractRepository<IUser> {
     return this.model.findOne(filter, projection, options);
   }
 
-  getAllUsers(){
+  getAllUsers() {
     return this.model.find();
   }
 }
