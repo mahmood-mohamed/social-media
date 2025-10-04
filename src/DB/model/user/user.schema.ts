@@ -1,7 +1,6 @@
 import { Schema } from "mongoose";
 import { Gender, UserAgent, UserRoles } from "../../../utils/common/enums";
 import { IUser } from "../../../utils/common/interfaces";
-import { sendMail, otpEmailTemplate } from "../../../utils/email";
 
 export const userSchema = new Schema<IUser>(
   {
@@ -50,8 +49,8 @@ export const userSchema = new Schema<IUser>(
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
     credentialUpdatedAt: { type: Date, default: Date.now },
-    otp: { type: String, default: undefined },
-    otpExpiryAt: { type: Date, default: undefined },
+    otp: { type: String },
+    otpExpiryAt: { type: Date },
   },
   {
     timestamps: true,
@@ -65,13 +64,3 @@ userSchema.virtual("fullName").get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
-userSchema.pre("save", function (next) {
-  if (this.userAgent === UserAgent.LOCAL) {
-    sendMail({
-      to: this.email,
-      subject: "Confirm your email address",
-      html: otpEmailTemplate(this.otp as string, this.firstName),
-    });
-    next();
-  }
-});

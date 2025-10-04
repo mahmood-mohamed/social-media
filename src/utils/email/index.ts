@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { MailOptions } from "nodemailer/lib/sendmail-transport";
 import { BadRequestError } from "../error";
+import { devConfig } from "../../config/env/dev.config";
 
 export const sendMail = async (mailOptions: MailOptions) => {
     const transport = nodemailer.createTransport({
@@ -9,12 +10,12 @@ export const sendMail = async (mailOptions: MailOptions) => {
         port: 587,
         secure: false,
         auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD
+            user: devConfig.emailUsername,
+            pass: devConfig.emailPassword
         }
     })
-    mailOptions.from = `Social Media App <${process.env.EMAIL_USERNAME}>`;
-    await transport.sendMail(mailOptions).catch((error) => {throw new BadRequestError(error)});
+    mailOptions.from = `Social Media App <${devConfig.emailUsername}>`;
+    return (await transport.sendMail(mailOptions));
     
 };
 

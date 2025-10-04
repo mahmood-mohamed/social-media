@@ -1,11 +1,10 @@
-import { Gender, UserAgent, UserRoles } from "../../../utils/common/enums";
+import { Gender, UserAgent, UserRoles } from "../../../utils";
 
 export class UserEntity {
   public firstName!: string;
   public lastName!: string;
   public email!: string;
   public password!: string;
-  public phoneNumber!: string;
   public isVerified!: boolean;
   public isActive!: boolean;
   public role!: UserRoles;

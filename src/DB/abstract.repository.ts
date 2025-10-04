@@ -28,4 +28,8 @@ export class AbstractRepository<T> {
     async delete(filter: RootFilterQuery<T>){
         return await this.model.deleteOne(filter);
     }
+
+    async deleteMany(filter: RootFilterQuery<T>){
+        return await this.model.deleteMany(filter);
+    }
 };

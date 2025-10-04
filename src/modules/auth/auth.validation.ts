@@ -46,3 +46,27 @@ export const resetPasswordSchema = baseUserSchema
     message: "Passwords do not match",
     path: ["confirmNewPassword"],
   });
+
+export const refreshTokenSchema = z.object({
+  refreshToken: z
+    .string()
+    .min(20, "Refresh token looks invalid")
+    .refine((val) => val.trim() !== "" && val !== null && val !== undefined, 
+    { message: "Refresh token is required" }) 
+});
+
+export const updateLoggedInUserPasswordSchema = baseUserSchema
+  .pick({
+    password: true,
+  })
+  .extend({
+    newPassword: z
+      .string()
+      .min(6, "New Password must be at least 6 characters long"),
+    confirmNewPassword: z
+      .string()
+      .min(6, "Confirm New Password must be at least 6 characters long"),
+  }).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "New Passwords do not match",
+    path: ["confirmNewPassword"],
+  })

@@ -2,7 +2,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import { connectDB } from "./DB";
 import { AppError } from "./utils";
 import cors from "cors";
-import { authRouter, userRouter } from "./modules";
+import { authRouter, postRouter, userRouter } from "./modules";
 
 export default function bootstrap(app: Express, express: any) {
   connectDB(); // Connect to the database
@@ -16,6 +16,7 @@ export default function bootstrap(app: Express, express: any) {
   // user routes
   app.use("/user", userRouter);
   // post routes
+  app.use("/post", postRouter);
   // comment routes
   // like routes
   // follow routes
