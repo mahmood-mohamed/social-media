@@ -46,10 +46,14 @@ export const userSchema = new Schema<IUser>(
     },
     gender: { type: String, enum: Object.values(Gender), default: Gender.MALE },
     profilePictureUrl: { type: String },
-    followersCount: { type: Number, default: 0 },
-    followingCount: { type: Number, default: 0 },
     credentialUpdatedAt: { type: Date, default: Date.now },
+    // 2 step verification
+    is2faEnabled: { type: Boolean, default: false },
+    // OTP
     otp: { type: String },
+    otpOldEmail: { type: String },
+    otpNewEmail: { type: String },
+    tempEmail: { type: String },
     otpExpiryAt: { type: Date },
   },
   {

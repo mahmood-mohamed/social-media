@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
 import { MailOptions } from "nodemailer/lib/sendmail-transport";
-import { BadRequestError } from "../error";
 import { devConfig } from "../../config/env/dev.config";
 
 export const sendMail = async (mailOptions: MailOptions) => {

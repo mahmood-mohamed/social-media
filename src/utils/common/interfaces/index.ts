@@ -16,8 +16,14 @@ export interface IUser {
   followersCount?: number; // Add followersCount
   followingCount?: number; // Add followingCount
   credentialUpdatedAt: Date;
-  otp?: string | undefined;
-  otpExpiryAt?: Date | undefined;
+  is2faEnabled?: boolean;
+  otp?: string;
+  otpExpiryAt?: Date;
+  otpOldEmail?: string;
+  otpNewEmail?: string;
+  tempEmail?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IAttachment {
@@ -27,26 +33,34 @@ export interface IAttachment {
 }
 
 export interface IReaction {
-  reaction: Reactions;
+  _id: ObjectId;
   userId: ObjectId;
+  reaction: Reactions;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface IPost {
   _id: ObjectId;
   userId: ObjectId;
   content: string;
-  attachments: IAttachment[];
+  attachments?: IAttachment[];
   reactions: IReaction[]; // e.g., { like: 10, love: 5 }
+  mentions?: ObjectId[]; 
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 
 export interface IComment {
-  // Define comment properties here
+  _id: ObjectId;
   postId: ObjectId;
   userId: ObjectId;
+  parentId?: ObjectId;
   content: string;
-  replies?: IComment[];
-  reactions?: { [key: string]: number }; // e.g., { like: 10, love: 5 }
+  attachments?: IAttachment[];
+  reactions?: IReaction[]; 
+  mentions?: ObjectId[]; 
   createdAt: Date;
   updatedAt: Date;
 }

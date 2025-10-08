@@ -1,33 +1,50 @@
 import { Schema } from "mongoose";
 import { IPost, Reactions } from "../../../utils";
 import { reactionSchema } from "../common";
-
-
+import fa from "zod/v4/locales/fa.js";
 
 export const postSchema = new Schema<IPost>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    content: { type: String, required: function () { 
-      if(this.attachments?.length)
-        return false; 
-      else 
-        return true 
-    }, trim: true },
-    attachments: [{ type: String }],
-    reactions: [ reactionSchema ],
+    content: {
+      type: String,
+      required: function () {
+        if(this.attachments && this.attachments.length > 0) return false;
+        else return true;
+      },
+      trim: true,
+    },
+    attachments: [ 
+      {
+        url: { type: String, required: true },
+        type: { type: String, enum: ["image", "video", "file"], default: "image" },
+      }
+    ],
+    reactions: [reactionSchema],
+    mentions: [{ type: Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
 );
 
+// ✅ Indexes for performance
+postSchema.index({ userId: 1, createdAt: -1 });
+
+//
+// ✅ Virtual: reactions summary (like, love, etc.)
+//
 postSchema.virtual("reactionsSummary").get(function () {
-  if (!this.reactions) return {};
+  if (!Array.isArray(this.reactions)) return {};
 
-  const summary: Record<string, number> = {};
-
-  for (const r of this.reactions) {
-    const key = Reactions[r.reaction]; // Get the reaction key from the Reactions enum
-    summary[key] = (summary[key] || 0) + 1;
-  }
-
-  return summary;
+  return this.reactions.reduce((acc, r) => {
+    const key = Reactions[r.reaction];
+    if (key) acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 });
+
+postSchema.virtual("comments",{
+  localField: "_id", // post id
+  foreignField: "postId", // comment post id
+  ref: "Comment",
+})
+

@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
-import { PostRepository } from "../../DB";
+import { CommentRepository, PostRepository } from "../../DB";
 import { ICreatePostDto } from "./post.dto";
 import { PostFactoryService } from "./factory";
-import { NotFoundError } from "../../utils";
+import { NotFoundError, UnauthorizedError } from "../../utils";
 import { ObjectId } from "mongoose";
 
 class PostService {
   private readonly postRepository = new PostRepository();
   private readonly postFactoryService = new PostFactoryService();
+  private readonly commentRepository = new CommentRepository();
+  constructor() {}
 
   create = async (req: Request, res: Response) => {
     // get data from request
@@ -33,11 +35,13 @@ class PostService {
     const { postId } = req.params;
     const post = await this.postRepository.findOne(
       { _id: postId },
-      { },
+      { updatedAt: 0, __v: 0 },
       {
-        populate: {
-          path: "userId", select: "firstName lastName fullName",
-        },
+        populate: [
+          {path: "userId", select: "firstName lastName fullName"},
+          // {path: "reactions.userId", select: "firstName lastName fullName"},
+          {path: "comments", match: {parentIds: []}},
+        ],
       }
     );
     if (!post) {
@@ -69,6 +73,23 @@ class PostService {
 
     return res.status(200).json(result);
   };
+
+  delete = async (req: Request, res: Response) => {
+    const { postId } = req.params;
+    const post = await this.postRepository.findOne({_id: postId});
+    if(!post) {
+      throw new NotFoundError("Post not found");
+    }
+
+    if(String(post.userId) !== String(req.user._id)) {
+      throw new UnauthorizedError("You are not authorized to delete this post");
+    }
+    // delete post
+    await this.postRepository.delete({ _id: postId });
+    // delete comments
+    await this.commentRepository.deleteMany({ postId: post._id });
+    return res.sendStatus(204);
+  }
 
 }
 

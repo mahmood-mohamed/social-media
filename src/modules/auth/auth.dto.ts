@@ -44,8 +44,3 @@ export interface IGoogleLoginDTO {
   idToken: string;
 }
 
-export interface IUpdateLoggedInUserPasswordDTO{
-  password: string;
-  newPassword: string;
-  confirmNewPassword: string;
-}

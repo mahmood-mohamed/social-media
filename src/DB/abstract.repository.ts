@@ -1,4 +1,4 @@
-import { Model, MongooseUpdateQueryOptions, ProjectionType, RootFilterQuery, UpdateQuery } from "mongoose";
+import { Model, MongooseUpdateQueryOptions, ProjectionType, QueryOptions, RootFilterQuery, UpdateQuery } from "mongoose";
 
 export class AbstractRepository<T> {
 
@@ -20,9 +20,17 @@ export class AbstractRepository<T> {
     async findOne(
         filter: RootFilterQuery<T>,
         projection?: ProjectionType<T>,
-        options?: MongooseUpdateQueryOptions<T>
+        options?: QueryOptions
     ) {
         return await this.model.findOne(filter, projection, options);
+    }
+
+    async find(
+        filter: RootFilterQuery<T>,
+        projection?: ProjectionType<T>,
+        options?: QueryOptions
+    ) {
+        return await this.model.find(filter, projection, options);
     }
 
     async delete(filter: RootFilterQuery<T>){

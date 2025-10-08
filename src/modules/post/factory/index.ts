@@ -7,9 +7,12 @@ export class PostFactoryService {
         const newPost = new PostEntity();
 
         newPost.userId = userId;
-        newPost.content = createPostDTO.content;
-        // newPost.attachments = []; // TODO : add attachments Cloud s3
+        newPost.content = createPostDTO.content.trim();
+        newPost.attachments = []; // TODO : add attachments Cloud s3
         newPost.reactions = [];
+        if (createPostDTO.mentions?.length) {
+            newPost.mentions = createPostDTO.mentions;
+        }
 
         return newPost
     }

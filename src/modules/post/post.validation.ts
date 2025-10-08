@@ -4,6 +4,7 @@ import { Reactions } from "../../utils";
 const generalPostSchema = z.object({
     content: z.string().min(1, "Content is required").trim().optional(),
     attachments: z.array(z.string()).optional(),
+    mentions: z.array(z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format")).optional(), // [ObjectId]
 })
 
 
@@ -24,6 +25,9 @@ export const updatePostSchema = generalPostSchema.partial().refine(
     }
 );
 
+export const deletePostSchema = z.object({
+    postId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format"),
+})
 
 export const reactionSchema = z.object({
     postId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format"), // from params

@@ -16,7 +16,7 @@ export const generateToken = ({
 }: ITokenParams): string => {
   if (tokenType === "refresh") {
     return jwt.sign({ id, role }, devConfig.refreshTokenSecret, {
-      expiresIn: "7d",
+      expiresIn: "2d",
     });
   } else if (tokenType === "access") {
     return jwt.sign({ id, role }, devConfig.accessTokenSecret, {

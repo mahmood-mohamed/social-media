@@ -2,7 +2,7 @@ import type { Express, NextFunction, Request, Response } from "express";
 import { connectDB } from "./DB";
 import { AppError } from "./utils";
 import cors from "cors";
-import { authRouter, postRouter, userRouter } from "./modules";
+import { authRouter, commentRouter, postRouter, userRouter } from "./modules";
 
 export default function bootstrap(app: Express, express: any) {
   connectDB(); // Connect to the database
@@ -18,10 +18,7 @@ export default function bootstrap(app: Express, express: any) {
   // post routes
   app.use("/post", postRouter);
   // comment routes
-  // like routes
-  // follow routes
-  // message routes
-  // notification routes
+  app.use("/comment", commentRouter); // 🔥 for reply out post 
 
   app.use("/{*dummy}", (req: Request, res: Response, next: NextFunction) => {
     return res.status(404).json({ success: false, message: "Route not found" });

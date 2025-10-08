@@ -54,7 +54,6 @@ class AuthService {
     return res.status(201).json({
       success: true,
       message: "User created successfully.",
-      data: createdUser,
     });
   };
 
@@ -70,11 +69,11 @@ class AuthService {
       throw new BadRequestError("User is already verified");
     }
     // verify OTP
-    if (!(await compareHash(verifyAccountDTO.otp, user.otp as string))) {
-      throw new BadRequestError("Invalid OTP");
-    }
     if (user.otpExpiryAt && user.otpExpiryAt < new Date()) {
       throw new BadRequestError("OTP has expired");
+    }
+    if (!(await compareHash(verifyAccountDTO.otp, user.otp as string))) {
+      throw new BadRequestError("Invalid OTP");
     }
     await this.userRepository.update(
       { _id: user._id }, // filter
@@ -139,7 +138,34 @@ class AuthService {
     if (!isValidPassword) {
       throw new UnauthorizedError("Invalid email or password");
     }
+    // check if apply 2FA
+    if (user.is2faEnabled) {
+      if (user.otpExpiryAt && user.otpExpiryAt > new Date()) {
+        throw new BadRequestError("OTP has already been sent.");
+      }
+      // generate OTP
+      const otp = generateOTP();
+      await this.userRepository.update(
+        { _id: user._id },
+        {
+          $set: {
+            otp: await generateHash(otp),
+            otpExpiryAt: generateExpiryTime(),
+          },
+        }
+      );
+      sendMail({
+        to: user.email,
+        subject: "2FA Verification",
+        html: otpEmailTemplate(otp, user.firstName),
+      });
+      return res.status(200).json({
+        success: true,
+        message: "2FA enabled. Please check your email for a verification OTP.",
+      });
+    }
 
+    // generate tokens
     const accessToken = generateToken({
       tokenType: "access",
       id: user.id,
@@ -164,6 +190,51 @@ class AuthService {
       data: { accessToken, refreshToken },
     });
   };
+
+  confirmLogin = async (req: Request, res: Response) => {
+    const { otp, email } = req.body as { otp: string, email: string };
+    const user = await this.userRepository.userExists({ email });
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+    if (!user.is2faEnabled) {
+      throw new BadRequestError("2FA is not enabled for this user");
+    }
+    if (user.otpExpiryAt && user.otpExpiryAt < new Date()) {
+      throw new BadRequestError("OTP has expired");
+    }
+    if (!await compareHash(otp, user.otp as string)) {
+      throw new BadRequestError("Invalid OTP");
+    }
+    await this.userRepository.update(
+      { _id: user._id },
+      { $unset: { otp: 1, otpExpiryAt: 1 } }
+    );
+    // generate tokens
+    const accessToken = generateToken({
+      tokenType: "access",
+      id: user.id,
+      role: user.role,
+    });
+    const refreshToken = generateToken({
+      tokenType: "refresh",
+      id: user.id,
+      role: user.role,
+    });
+
+    // save refresh token in DB
+    await this.tokenRepository.createToken({
+      userId: user.id,
+      token: refreshToken,
+      type: TokenType.REFRESH,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    });
+    return res.status(200).json({
+      success: true,
+      message: "User logged in successfully",
+      data: { accessToken, refreshToken },
+    });
+  }
 
   googleLogin = async (req: Request, res: Response) => {
     const googleLoginDTO: authDTO.IGoogleLoginDTO = req.body;
@@ -273,28 +344,6 @@ class AuthService {
     });
   };
 
-  updateLoggedInUserPassword = async (req: Request, res: Response) => {
-    const updatePasswordDTO: authDTO.IUpdateLoggedInUserPasswordDTO = req.body;
-    const user = req.user as IUser;
-
-    if (!(await compareHash(updatePasswordDTO.password, user.password))) {
-      throw new BadRequestError("Current password is incorrect");
-    }
-
-    await this.userRepository.update(
-      { _id: user._id },
-      {
-        password: await generateHash(updatePasswordDTO.newPassword),
-        credentialUpdatedAt: new Date(),
-      }
-    );
-    return res.status(200).json({
-      success: true,
-      message:
-        "Password updated successfully, please login again with new password",
-    });
-  };
-
   //*⛔ logic to logout user
   logout = async (req: Request, res: Response) => {
     // logout logic
@@ -306,6 +355,7 @@ class AuthService {
     );
     return res.sendStatus(204); // No Content >> Do not return any data >> Done
   };
+
 
   //*🔃✅ logic to issue new access token using refresh token
   refreshToken = async (req: Request, res: Response) => {
@@ -328,7 +378,7 @@ class AuthService {
     );
     if (payload.iat && payload.iat < credentialsUpdatedAt) {
       throw new UnauthorizedError(
-        "Token expired after password change, please login again"
+        "Invalid or expired refresh token, please login again"
       );
     }
 
