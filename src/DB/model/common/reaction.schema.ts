@@ -12,5 +12,8 @@ export const reactionSchema = new Schema<IReaction>({
         enum: Object.values(Reactions),
         default: Reactions.LIKE,
     },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
 },
-{ timestamps: true });
+{ _id: false }
+);

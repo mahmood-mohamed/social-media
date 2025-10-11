@@ -27,3 +27,9 @@ export const commentSchema = new Schema<IComment>(
     },
     { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
 );
+
+commentSchema.virtual("replies", {
+    ref: "Comment",
+    localField: "_id",
+    foreignField: "parentId",
+});

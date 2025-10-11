@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
-import { CommentRepository } from "../../DB";
-import { IComment, IPost, NotFoundError, UnauthorizedError } from "../../utils";
-import { PostRepository } from "./../../DB/model/post/post.repository";
+import { CommentRepository, ReactionHelper, PostRepository} from "../../DB";
+import { IComment, IPost, NotFoundError, Reactions, UnauthorizedError } from "../../utils";
 import { ICreateCommentDto } from "./comment.dto";
 import { CommentFactory } from "./factory";
 
@@ -10,10 +9,14 @@ class CommentService {
   private readonly postRepository = new PostRepository();
   private readonly commentRepository = new CommentRepository();
   private readonly commentFactoryService = new CommentFactory();
+  private readonly reactionHelper = new ReactionHelper();
+
+
+
 
   create = async (req: Request, res: Response) => {
     const createCommentDto: ICreateCommentDto = req.body;
-    const { postId, id: commentId } = req.params;
+    const { postId, commentId } = req.params;
 
     if(!postId && !commentId) throw new NotFoundError("You must provide either postId or commentId");
 
@@ -48,6 +51,43 @@ class CommentService {
       message: "Comment created successfully",
       data: commentCreated,
     });
+  };
+
+  getSpecific = async (req: Request, res: Response) => {
+    const { commentId } = req.params as { commentId: string };
+    const comment = await this.commentRepository.findOne(
+      { _id: commentId },
+      { updatedAt: 0, __v: 0 },
+      {
+        populate: [
+          { path: "userId" as "user" , select: "firstName lastName fullName" },
+          { path: "replies", match: { parentIds:  null } },
+        ],
+      }
+    );
+    if (!comment) throw new NotFoundError("Comment not found");
+    return res.status(200).json({ success: true, message: "Comment retrieved successfully", data: comment });
+  }
+
+  reaction = async (req: Request, res: Response) => {
+    const { reaction }: { reaction?: Reactions } = req.body;
+    const { commentId } = req.params as { commentId: string };
+    const comment = await this.commentRepository.findOne({ _id: commentId });
+    if (!comment) throw new NotFoundError("Comment not found");
+
+    const { action } = await this.reactionHelper.handleReactions(
+      this.commentRepository, 
+      commentId, 
+      req.user._id, 
+      reaction,
+      {type: "comment"}
+    );
+
+    return res.status(200).json({ 
+      success: true, 
+      message: action,
+    });
+
   };
 
   delete = async (req: Request, res: Response) => {

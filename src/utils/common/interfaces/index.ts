@@ -1,5 +1,6 @@
 import { ObjectId } from "mongoose";
 import { Gender, Reactions, TokenType, UserAgent, UserRoles } from "../enums";
+import { reactionSchema } from './../../../DB/model/common/reaction.schema';
 
 export interface IUser {
   _id: ObjectId;
@@ -33,13 +34,20 @@ export interface IAttachment {
 }
 
 export interface IReaction {
-  _id: ObjectId;
   userId: ObjectId;
   reaction: Reactions;
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface HasReactions extends Document {
+  reactions: {
+    userId: ObjectId;
+    reaction: Reactions;
+    createdAt: Date;
+    updatedAt: Date;
+  }[];
+}
 export interface IPost {
   _id: ObjectId;
   userId: ObjectId;
