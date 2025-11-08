@@ -53,7 +53,7 @@ class AuthService {
 
     return res.status(201).json({
       success: true,
-      message: "User created successfully.",
+      message: "User created successfully. Please verify your account.",
     });
   };
 
@@ -77,7 +77,7 @@ class AuthService {
     }
     await this.userRepository.update(
       { _id: user._id }, // filter
-      { $set: { isVerified: true }, $unset: { otp: 1, otpExpiryAt: 1 } }
+      { $set: { isVerified: true }, $unset: { otp: "", otpExpiryAt: "" } }
     );
 
     return res.sendStatus(204); // No Content >> Do not return any data >> Done
@@ -116,7 +116,7 @@ class AuthService {
     });
     return res.status(200).json({
       success: true,
-      message: "OTP sent successfully",
+      message: "Verification OTP resent successfully",
     });
   };
 
@@ -161,7 +161,8 @@ class AuthService {
       });
       return res.status(200).json({
         success: true,
-        message: "2FA enabled. Please check your email for a verification OTP.",
+        message: "2FA verification required. Please check your email for the OTP to confirm login.",
+        data: { email: user.email, is2faEnabled: true },
       });
     }
 
@@ -208,7 +209,7 @@ class AuthService {
     }
     await this.userRepository.update(
       { _id: user._id },
-      { $unset: { otp: 1, otpExpiryAt: 1 } }
+      { $unset: { otp: "", otpExpiryAt: "" } }
     );
     // generate tokens
     const accessToken = generateToken({
@@ -334,7 +335,7 @@ class AuthService {
       {
         password: await generateHash(resetPasswordDTO.newPassword),
         credentialUpdatedAt: new Date(),
-        $unset: { otp: 1, otpExpiryAt: 1 }, // remove otp and otpExpiryAt fields
+        $unset: { otp: "", otpExpiryAt: "" }, // remove otp and otpExpiryAt fields
       }
     );
     return res.status(200).json({
@@ -355,7 +356,6 @@ class AuthService {
     );
     return res.sendStatus(204); // No Content >> Do not return any data >> Done
   };
-
 
   //*🔃✅ logic to issue new access token using refresh token
   refreshToken = async (req: Request, res: Response) => {

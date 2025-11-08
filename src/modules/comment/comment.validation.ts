@@ -20,8 +20,22 @@ export const createCommentSchema = generalCommentSchema.refine(
   }
 );
 
+// ✅ Update Comment Schema
+export const updateCommentSchema = generalCommentSchema.refine(
+  (data) => data.content || (data.attachments && data.attachments.length > 0),
+  {
+    message: "Comment must have content or at least one attachment",
+    path: ["content"],
+  }
+);
+
+
 export const reactionSchema = z.object({
-    commentId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format"), // from params
+    commentId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid comment ID format"), // from params
     reaction: z.enum(Reactions).nullable().optional(), // from body
 })
 
+
+export const commentIdSchema = z.object({
+    commentId: z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid ID format"),
+})

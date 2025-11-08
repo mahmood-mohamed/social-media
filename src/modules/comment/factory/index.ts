@@ -4,19 +4,18 @@ import { CommentEntity } from "../entity";
 
 export class CommentFactory {
   createComment(
-    createCommentDTO: ICreateCommentDto,
+    dto: ICreateCommentDto,
     userId: ObjectId,
     postId: ObjectId,
-    parentId: ObjectId,
+    parentId: ObjectId | null = null,
   ) {
-    const newComment = new CommentEntity();
-    newComment.userId = userId;
-    newComment.postId = postId;
-    newComment.parentId = parentId;
-    newComment.content = createCommentDTO.content;
-    newComment.mentions = createCommentDTO.mentions || [];
-    newComment.attachments = createCommentDTO.attachments || [];
-    newComment.reactions = [];
-    return newComment;
+    const comment = new CommentEntity();
+    comment.userId = userId;
+    comment.postId = postId;
+    comment.parentId = parentId;
+    comment.content = dto.content.trim() || "";
+    comment.mentions = dto.mentions || [];
+    comment.attachment = dto.attachment ?? { secure_url: null, public_id: null };
+    return comment;
   }
 }

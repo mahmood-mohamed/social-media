@@ -2,24 +2,36 @@ import { Router } from "express";
 import userService from "./user.service";
 import * as UV from "./user.validation";
 import { isValid } from "../../middleware/validation.middleware";
-import { isAuthenticated } from "../../middleware/auth.middleware";
+import { isAuthenticated, uploadFileToCloud, validateImageUpload } from "../../middleware";
 
 const router = Router();
 
 // private route
 router.use(isAuthenticated());
 
-router.patch('/update-password', isValid(UV.updateLoggedInUserPasswordSchema), userService.updateLoggedInUserPassword); // 🔑 Update password
+router.get("/me", userService.getMyProfile); //👤 My Profile
+router.get("/:id", isValid(UV.idSchema), userService.getProfileById); //👤 User Profile Info
 
 router.get("/search", isValid(UV.searchUsersSchema), userService.searchUsers); //🔎 Search
 
-router.get("/:id", isValid(UV.idSchema), userService.getProfileById); //👤 Profile
+// by default, accepts images down to 3MB
+router.patch(
+     "/update-profile-picture",
+     uploadFileToCloud().single("profilePicture"),  
+     validateImageUpload(true),
+     userService.updateProfilePicture
+    ); //🖼️ Update Profile Picture
 
-router.post("/update-email", isValid(UV.updateEmailSchema), userService.updateEmail); //📧 Update email
-router.post("/update-user-email", isValid(UV.updateUserEmailSchema), userService.updateUserEmail); //📧 Update userEmail
+// 🔑 Update password
+router.patch('/update-password', isValid(UV.updateLoggedInUserPasswordSchema), userService.updateLoggedInUserPassword);
 
-router.post("/two-factor-auth", userService.is2faEnabled); //🔑 Two factor auth
-router.patch("/enable-two-factor-auth", isValid(UV.enable2faSchema), userService.enable2fa); //🔑 Enable two factor auth
-router.patch("/disable-two-factor-auth", userService.disable2fa); //🔑 Disable two factor auth
+// 📧 Step 1: Send OTPs to old and new emails
+router.post("/update-email", isValid(UV.updateEmailSchema), userService.updateEmail); 
+// 📧 Step 2: Verify OTPs and update email
+router.patch("/confirm-update-email", isValid(UV.updateUserEmailSchema), userService.confirmUpdateEmail); 
+
+router.post("user/2fa", userService.is2faEnabled); //🔑 Send OTP to email to enable 2FA
+router.patch("user/2fa/enable", isValid(UV.enable2faSchema), userService.enable2fa); //🔑 Verify OTP & enable 2FA
+router.patch("user/2fa/disable", userService.disable2fa); //🔑 Disable 2FA
 
 export default router;

@@ -34,9 +34,6 @@ export class ReactionHelper {
    
     //* 🧹 Remove or toggle off
     if (hasReaction && (reaction == null ||  hasReaction.reaction === reaction)) {
-      console.log("5555555555555555");
-
-      
       await repository.update({ _id: parentId }, { $pull: { reactions: { userId } } });
       return { action: hasReaction ? "toggled-off" : "removed" };
     }

@@ -28,13 +28,13 @@ export class AuthFactoryService {
     const user = new UserEntity();
 
     const client = new OAuth2Client({
-      clientId: devConfig.googleClientId,
-      clientSecret: devConfig.googleClientSecret,
+      clientId: devConfig.googleClientId as string,
+      clientSecret: devConfig.googleClientSecret as string,
     });
 
     const ticket = await client.verifyIdToken({
-      idToken: googleLoginDTO.idToken,
-      audience: devConfig.googleClientId,
+      idToken: googleLoginDTO.idToken as string,
+      audience: devConfig.googleClientId as string,
     });
 
     const payload = ticket.getPayload();

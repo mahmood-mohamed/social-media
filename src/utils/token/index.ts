@@ -15,11 +15,11 @@ export const generateToken = ({
   role,
 }: ITokenParams): string => {
   if (tokenType === "refresh") {
-    return jwt.sign({ id, role }, devConfig.refreshTokenSecret, {
+    return jwt.sign({ id, role }, devConfig.refreshTokenSecret as string, {
       expiresIn: "2d",
     });
   } else if (tokenType === "access") {
-    return jwt.sign({ id, role }, devConfig.accessTokenSecret, {
+    return jwt.sign({ id, role }, devConfig.accessTokenSecret as string, {
       expiresIn: "1d",
     });
   } else {
@@ -32,9 +32,9 @@ export const verifyToken = (
   tokenType: "refresh" | "access"
 ): JwtPayload => {
   if (tokenType === "access") {
-    return jwt.verify(token, devConfig.accessTokenSecret) as JwtPayload;
+    return jwt.verify(token, devConfig.accessTokenSecret as string) as JwtPayload;
   } else if (tokenType === "refresh") {
-    return jwt.verify(token, devConfig.refreshTokenSecret) as JwtPayload;
+    return jwt.verify(token, devConfig.refreshTokenSecret as string) as JwtPayload;
   }
   throw new Error("Invalid token type"); // fallback safety
 };

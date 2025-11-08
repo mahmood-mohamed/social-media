@@ -16,6 +16,10 @@ export class UserRepository extends AbstractRepository<IUser> {
     return this.model.findOne(filter, projection, options);
   }
 
+  async count(filter: RootFilterQuery<IUser>) {
+    return await this.model.countDocuments(filter);
+  }
+
   getAllUsers() {
     return this.model.find();
   }

@@ -3,8 +3,9 @@ import { IAttachment, IReaction } from "../../../utils";
 
 export class PostEntity {
     userId!: ObjectId;
-    content!: string;
+    content?: string;
     attachments?: IAttachment[];    // ✅ optional
-    reactions!: IReaction[];
+    reactions?: IReaction[];
     mentions?: ObjectId[];          // ✅ optional
+    isDeleted!: boolean;
 }

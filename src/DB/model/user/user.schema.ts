@@ -1,6 +1,7 @@
 import { Schema } from "mongoose";
 import { Gender, UserAgent, UserRoles } from "../../../utils/common/enums";
 import { IUser } from "../../../utils/common/interfaces";
+import { devConfig } from "../../../config/env/dev.config";
 
 export const userSchema = new Schema<IUser>(
   {
@@ -45,7 +46,10 @@ export const userSchema = new Schema<IUser>(
       default: UserAgent.LOCAL,
     },
     gender: { type: String, enum: Object.values(Gender), default: Gender.MALE },
-    profilePictureUrl: { type: String },
+    profilePicture: {
+      secure_url: { type: String, default: "" },
+      public_id: { type: String, default: "" },
+    },
     credentialUpdatedAt: { type: Date, default: Date.now },
     // 2 step verification
     is2faEnabled: { type: Boolean, default: false },
@@ -62,6 +66,22 @@ export const userSchema = new Schema<IUser>(
     toJSON: { virtuals: true },
   }
 );
+
+// Set default profile picture before saving if not provided
+userSchema.pre("save", function (next){
+  // user is new
+  if (!this.isNew) return next();
+  // user has provided profile picture
+  if(this.profilePicture?.secure_url) return next();
+  // set default profile picture based on gender
+  const defaultMale = devConfig.defaultProfilePictureMale as string;
+  const defaultFemale = devConfig.defaultProfilePictureFemale as string;
+  this.profilePicture = {
+    secure_url: this.gender === Gender.FEMALE ? defaultFemale : defaultMale,
+    public_id: "",
+  };
+  next();
+});
 
 // Full name virtual fieldSocial Media
 userSchema.virtual("fullName").get(function () {

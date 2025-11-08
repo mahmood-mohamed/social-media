@@ -1,28 +1,87 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import { UserRepository } from "../../DB";
-import { BadRequestError, compareHash, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail } from "../../utils";
+import { BadRequestError, compareHash, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UnauthorizedError } from "../../utils";
 import { IUpdateLoggedInUserPasswordDTO, updateUserEmailDTO } from "./user.dto";
+import cloudinary from "../../config/cloudinary";
+import fs from "fs/promises";
 
 class UserService {
   private readonly userRepository = new UserRepository();
   constructor() {}
 
+  getMyProfile = async (req: Request, res: Response): Promise<Response> => {
+    // include only these fields
+    const { 
+      _id, firstName, lastName, email, gender, profilePicture, createdAt, updatedAt, role, is2faEnabled,
+    } = req.user;
+    return res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      data: {
+        _id,
+        firstName,
+        lastName,
+        email,
+        gender,
+        profilePicture,
+        role,
+        is2faEnabled,
+        createdAt,
+        updatedAt,
+      },
+    });
+  };
+
+  updateProfilePicture = async (req: Request, res: Response): Promise<Response> => {
+    const user = req.user as IUser;
+    if (!req.file || !req.file.path) {
+      throw new BadRequestError("No file uploaded");
+    }
+    // Delete previous profile picture from Cloudinary if exists
+    if(user.profilePicture && user.profilePicture.public_id) {
+      await cloudinary.uploader.destroy(user.profilePicture.public_id).catch(() => null);
+    }
+    // Upload  new profile picture to Cloudinary
+    const  { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
+      folder: `social-media/users/${user._id}/profile-picture`,
+      resource_type: "image", // Specify the resource type
+      transformation: [{ width: 500, height: 500, crop: "thumb", gravity: "face" }], // Optional image transformation
+      overwrite: true, // Overwrite existing image with the same public_id
+    });
+    // Update user's profilePicture field in the database
+    await this.userRepository.findAndUpdate(
+      { _id: user._id },
+      { profilePicture: { secure_url, public_id } },
+      { new: true }
+    );
+    // Delete the local file after upload
+    await fs.unlink(req.file.path).catch(() => null); 
+    return res.status(200).json({
+      success: true,
+      message: "Profile picture updated successfully",
+      data: {
+        id: user._id,
+        profilePicture: { secure_url },
+      },
+    });
+  };
+
   getProfileById = async (req: Request, res: Response): Promise<Response> => {
+    const { id } = req.params as {id:string}; // getting the user ID from the URL
+
     const user = await this.userRepository.findOne(
-      { _id: req.params.id },  // filtering by user ID
+      { _id: id },  // filtering by user ID
       {
-        password: 0,
-        credentialUpdatedAt: 0,
-        isVerified: 0,
-        userAgent: 0,
-        isActive: 0,
-        role: 0,
-        otp: 0,
-        otpExpiryAt: 0,
-        createdAt: 0,
-        updatedAt: 0,
-        __v: 0,
-      } // exclude these fields
+        firstName: 1,
+        lastName: 1,
+        email: 1,
+        gender: 1,
+        profilePicture: 1,
+        followersCount: 1,
+        followingCount: 1,
+        role: 1,
+        createdAt: 1,
+      } // include only these fields
     );
 
     if (!user) {
@@ -52,7 +111,7 @@ class UserService {
         firstName: 1,
         lastName: 1,
         fullName: 1,
-        // profilePictureUrl: 1, // TODO: Add profilePictureUrl
+        // profilePicture: 1, // TODO: Add profilePicture
       },
       {
         limit: 10,
@@ -134,7 +193,7 @@ class UserService {
     });
   };
 
-  updateUserEmail = async (req: Request, res: Response): Promise<Response> => {
+  confirmUpdateEmail = async (req: Request, res: Response): Promise<Response> => {
     const user = req.user as IUser;
     const { otpOldEmail, otpNewEmail }: updateUserEmailDTO = req.body;
     if (!user.otpNewEmail && !user.otpOldEmail) {
@@ -157,10 +216,10 @@ class UserService {
         email: user.tempEmail as string,
         credentialUpdatedAt: new Date(),
         $unset: {
-          otpOldEmail: 1,
-          otpNewEmail: 1,
-          tempEmail: 1,
-          otpExpiryAt: 1
+          otpOldEmail: "",
+          otpNewEmail: "",
+          tempEmail: "",
+          otpExpiryAt: "",
         },
       }    
     );
@@ -176,7 +235,7 @@ class UserService {
     const user = req.user as IUser;
 
     if (user.is2faEnabled) {
-      throw new BadRequestError("2FA is already enabled");
+      throw new BadRequestError("2FA already enabled");
     }
     if(user.otpExpiryAt && user.otpExpiryAt > new Date()) {
       throw new BadRequestError("OTP not expired yet");

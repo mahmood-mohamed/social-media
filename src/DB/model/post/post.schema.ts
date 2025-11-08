@@ -1,7 +1,6 @@
 import { Schema } from "mongoose";
-import { IPost, Reactions } from "../../../utils";
+import { IPost, PostDeletedBy, Reactions } from "../../../utils";
 import { reactionSchema } from "../common";
-import fa from "zod/v4/locales/fa.js";
 
 export const postSchema = new Schema<IPost>(
   {
@@ -16,12 +15,16 @@ export const postSchema = new Schema<IPost>(
     },
     attachments: [ 
       {
-        url: { type: String, required: true },
-        type: { type: String, enum: ["image", "video", "file"], default: "image" },
+        secure_url: { type: String, required: true },
+        public_id: { type: String, required: true },
+        type: { type: String, enum: ["image", "video"], default: "image" },
       }
     ],
     reactions: [reactionSchema],
     mentions: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: String, enum: Object.values(PostDeletedBy), default: null },
   },
   { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
 );

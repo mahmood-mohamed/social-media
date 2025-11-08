@@ -13,6 +13,16 @@ export enum Gender {
   MALE = "male",
   FEMALE = "female",
 }
+export enum PostDeletedBy {
+  USER = "user",
+  ADMIN = "admin",
+}
+export enum CommentDeletedBy {
+  USER = "user",
+  POST = "post",
+  POST_OWNER = "post_owner",
+  ADMIN = "admin",
+}
 
 export enum TokenType {
   REFRESH = "refresh",
@@ -27,4 +37,10 @@ export enum Reactions {
   WOW = 5,
   SAD = 6,
   ANGRY = 7,
+}
+
+export enum FriendRequestStatus {
+  PENDING = "pending",
+  ACCEPTED = "accepted",
+  REJECTED = "rejected",
 }
