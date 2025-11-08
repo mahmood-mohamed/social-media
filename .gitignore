@@ -1,6 +1,19 @@
-/.env
-/node_modules
-/.vscode
-/tsconfig.json
-/uploads
-/todo.md
+# build output
+dist/
+build/
+
+# Environment variables
+.env
+
+# Dependencies
+node_modules/
+
+# IDE configs
+.vscode/
+
+# Uploads or runtime data
+uploads/
+
+# Optional personal notes
+todo.md
+
