@@ -13,7 +13,6 @@ class ChatService {
       {},
       { populate: {path: "messages"}, lean: true }
     );
-console.log("💝💝" , chat);
 
     return res.status(200).json({
       success: true,
