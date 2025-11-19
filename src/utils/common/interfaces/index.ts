@@ -45,6 +45,20 @@ export interface IReaction {
   updatedAt: Date;
 }
 
+// *****       IMessages Interface         ******/
+export interface IMessage {
+  _id: ObjectId;
+  sender: ObjectId;
+  content: string;
+  attachments?: IAttachment[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+export interface IChat {
+  users: ObjectId[];
+  messages: ObjectId[];
+}
+
 // *****       HasReactions Interface         ******/
 export interface HasReactions extends Document {
   reactions: {
