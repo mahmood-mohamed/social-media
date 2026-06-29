@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { IPost, PostDeletedBy, Reactions } from "../../../utils";
+import { IPost, PostDeletedBy, PostPrivacy, Reactions } from "../../../utils";
 import { reactionSchema } from "../common";
 
 export const postSchema = new Schema<IPost>(
@@ -8,12 +8,12 @@ export const postSchema = new Schema<IPost>(
     content: {
       type: String,
       required: function () {
-        if(this.attachments && this.attachments.length > 0) return false;
+        if (this.attachments && this.attachments.length > 0) return false;
         else return true;
       },
       trim: true,
     },
-    attachments: [ 
+    attachments: [
       {
         secure_url: { type: String, required: true },
         public_id: { type: String, required: true },
@@ -25,6 +25,12 @@ export const postSchema = new Schema<IPost>(
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
     deletedBy: { type: String, enum: Object.values(PostDeletedBy), default: null },
+    privacy: {
+      type: String,
+      enum: Object.values(PostPrivacy),
+      default: PostPrivacy.PUBLIC,
+      index: true,
+    },
   },
   { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
 );
@@ -45,7 +51,7 @@ postSchema.virtual("reactionsSummary").get(function () {
   }, {} as Record<string, number>);
 });
 
-postSchema.virtual("comments",{
+postSchema.virtual("comments", {
   localField: "_id", // post id
   foreignField: "postId", // comment post id
   ref: "Comment",
