@@ -9,7 +9,7 @@ export class PostRepository extends AbstractRepository<IPost> {
     super(Post);
   }
 
-  async count (filter: RootFilterQuery<IPost>) {
+  async countDocuments(filter: RootFilterQuery<IPost>) {
     return await this.model.countDocuments(filter);
   }
 };
