@@ -13,8 +13,8 @@ export default function bootstrap(app: Express, express: any) {
   }));
   app.use("/auth", authRouter);
   app.use("/user", userRouter);
-  app.use("/post", postRouter);
-  app.use("/comment", commentRouter);
+  app.use("/posts", postRouter);
+  app.use("/comments", commentRouter);
   app.use("/admin", adminRouter);
   app.use("/friends", friendsRouter);
   app.use("/chat", chatRouter);
