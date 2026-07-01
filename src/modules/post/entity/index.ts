@@ -1,11 +1,13 @@
 import { ObjectId } from "mongoose";
-import { IAttachment, IReaction } from "../../../utils";
+import { IAttachment, IReaction, PostPrivacy } from "../../../utils";
+
 
 export class PostEntity {
     userId!: ObjectId;
     content?: string;
-    attachments?: IAttachment[];    // ✅ optional
+    attachments?: IAttachment[];
     reactions?: IReaction[];
-    mentions?: ObjectId[];          // ✅ optional
+    mentions?: ObjectId[];
     isDeleted!: boolean;
+    privacy?: PostPrivacy;
 }

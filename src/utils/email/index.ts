@@ -1,24 +1,23 @@
 import nodemailer from "nodemailer";
 import { MailOptions } from "nodemailer/lib/sendmail-transport";
 import { devConfig } from "../../config/env/dev.config";
+import { IUser } from "../common";
 
 export const sendMail = async (mailOptions: MailOptions) => {
-    const transport = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        service: "gmail", 
-        port: 587,
-        secure: false,
-        auth: {
-            user: devConfig.emailUsername,
-            pass: devConfig.emailPassword
-        }
-    })
-    mailOptions.from = `Social Media App <${devConfig.emailUsername}>`;
-    return (await transport.sendMail(mailOptions));
-    
+  const transport = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    service: "gmail",
+    port: 587,
+    secure: false,
+    auth: {
+      user: devConfig.emailUsername,
+      pass: devConfig.emailPassword
+    }
+  })
+  mailOptions.from = `Social Media App <${devConfig.emailUsername}>`;
+  return (await transport.sendMail(mailOptions));
+
 };
-
-
 
 
 export function otpEmailTemplate(otp: string, name: string) {
@@ -42,3 +41,57 @@ export function otpEmailTemplate(otp: string, name: string) {
   </html>
   `;
 }
+
+
+// *******     Send Mention Emails     ******
+interface SendMentionEmailParams {
+  users: IUser[];
+  sender: IUser;
+  entityType: "post" | "comment";
+  postId: string;
+  content?: string;
+}
+
+export const sendMentionEmails = async ({
+  users,
+  sender,
+  entityType,
+  postId,
+  content,
+}: SendMentionEmailParams) => {
+  if (!users.length) return;
+
+  await Promise.allSettled(
+    users.map((user) =>
+      sendMail({
+        to: user.email,
+        subject: `You've been mentioned in a ${entityType}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background:#f9f9f9;padding:20px">
+            <div style="max-width:600px;margin:auto;background:#fff;padding:20px;border-radius:10px">
+              
+              <h2>👋 Hello ${user.firstName}</h2>
+
+              <p>
+                <strong>${sender.firstName} ${sender.lastName}</strong>
+                mentioned you in a <strong>${entityType}</strong>.
+              </p>
+
+              ${content
+            ? `<blockquote style="border-left:4px solid #007bff;padding-left:12px">
+                        ${content}
+                     </blockquote>`
+            : ""
+          }
+
+              <a href="${process.env.CLIENT_URL}/${entityType}/${postId}">
+                View Post
+              </a>
+
+            </div>
+          </div>
+        `,
+      })
+    )
+  );
+};

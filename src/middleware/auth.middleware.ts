@@ -10,7 +10,7 @@ export const isAuthenticated = () => {
       return new UnauthorizedError("Unauthorized");
     }
     const userRepository = new UserRepository();
-    const user = await userRepository.findOne({ _id: payload.id });
+    const user = await userRepository.findById(payload.id);
     if (!user) {
       return new NotFoundError("User not found");
     }
@@ -19,7 +19,7 @@ export const isAuthenticated = () => {
     if (payload.iat && payload.iat < credentialsUpdatedAt) {
       return next(new UnauthorizedError("Token invalid or expired, please login again"));
     }
-    
+
     req.user = user;
     next();
   };

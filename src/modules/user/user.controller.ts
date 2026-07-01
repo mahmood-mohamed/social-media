@@ -10,9 +10,9 @@ const router = Router();
 router.use(isAuthenticated());
 
 router.get("/me", userService.getMyProfile); //👤 My Profile
-router.get("/:id", isValid(UV.idSchema), userService.getProfileById); //👤 User Profile Info
+router.get("/search", isValid(UV.searchUsersSchema), userService.searchUsers); //🔎 Search Users by first name, last name, or full name
 
-router.get("/search", isValid(UV.searchUsersSchema), userService.searchUsers); //🔎 Search
+router.get("/:id", isValid(UV.idSchema), userService.getProfileById); //👤 User Profile Info by ID
 
 // by default, accepts images down to 3MB
 router.patch(

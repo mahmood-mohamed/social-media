@@ -1,5 +1,5 @@
 import { ObjectId } from "mongoose";
-import { FriendRequestStatus, Gender, Reactions, TokenType, UserAgent, UserRoles } from "../enums";
+import { FriendRequestStatus, Gender, PostPrivacy, Reactions, TokenType, UserAgent, UserRoles } from "../enums";
 
 export interface IUser {
   _id: ObjectId;
@@ -35,8 +35,8 @@ export interface IAttachment {
   type: string;
 }
 export interface ICommentAttachment {
-    secure_url: string | null;
-    public_id: string | null;
+  secure_url: string | null;
+  public_id: string | null;
 }
 export interface IReaction {
   userId: ObjectId;
@@ -69,20 +69,21 @@ export interface HasReactions extends Document {
   }[];
 }
 
-// ******       Post         ******/
+// *****       IPost Interface         ******/
 export interface IPost {
   _id: ObjectId;
   userId: ObjectId;
   content: string;
   attachments: IAttachment[];
   reactions: IReaction[]; // e.g., { like: 10, love: 5 }
-  mentions: ObjectId[] ; 
+  mentions: ObjectId[];
   isDeleted: boolean;
   deletedAt: Date | null;
   deletedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   comments: IComment[]; // add comments virtual property
+  privacy: PostPrivacy;
 }
 
 // ******       Comment         ******/
@@ -134,7 +135,7 @@ export interface IBlockedUser {
 // ******       Token         ******/
 export interface IToken {
   userId: ObjectId;
-  type:TokenType;
+  type: TokenType;
   token: string;
   expiresAt: Date;
 }
@@ -144,7 +145,7 @@ declare module "jsonwebtoken" {
     id: ObjectId;
     role: UserRoles;
   }
-}  
+}
 
 
 // Augmenting Express Request interface to include user property

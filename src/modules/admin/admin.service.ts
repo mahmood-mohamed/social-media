@@ -7,7 +7,7 @@ class AdminService {
   private readonly userRepository = new UserRepository();
   private readonly postRepository = new PostRepository();
   private readonly commentRepository = new CommentRepository();
-  constructor() {}
+  constructor() { }
 
   //* * POSTS CRUD METHODS * *//
   public getAllDeletedPosts = async (req: Request, res: Response) => {
@@ -16,21 +16,21 @@ class AdminService {
     const posts = await this.postRepository.find(
       { isDeleted: true },
       {},
-      { 
-        sort: { deletedAt: -1 }, 
-        skip: (page - 1) * limit, 
+      {
+        sort: { deletedAt: -1 },
+        skip: (page - 1) * limit,
         limit,
         populate: {
           path: "userId",
           select: "firstName lastName profilePicture",
           model: "User"
         },
-        lean: true 
+        lean: true
       }
     );
-    const count = await this.postRepository.count({ isDeleted: true });
+    const count = await this.postRepository.countDocuments({ isDeleted: true });
     const formattedPosts = posts.map((post) => {
-      return{
+      return {
         _id: post._id,
         content: post.content,
         mentions: post.mentions,
@@ -40,8 +40,8 @@ class AdminService {
         deletedAt: post.deletedAt,
         deletedBy: post.deletedBy
       }
-  });
-    res.status(200).json({ 
+    });
+    res.status(200).json({
       success: true,
       message: "All deleted posts fetched successfully",
       data: formattedPosts,
@@ -101,7 +101,7 @@ class AdminService {
     const post = await this.postRepository.findAndUpdate(
       { _id: postId, isDeleted: true },
       { $set: { isDeleted: false, deletedBy: null, deletedAt: null } },
-      { 
+      {
         populate: { path: "userId", select: "firstName lastName fullName profilePicture" },
         new: true,
       }
@@ -140,17 +140,17 @@ class AdminService {
       { _id: 1 },
       { lean: true }
     );
-    if (!rootComment)  throw new NotFoundError("Comment not found");
-  
+    if (!rootComment) throw new NotFoundError("Comment not found");
+
     // 🧩 Collect all comments to delete (root + replies)
     const toDeleteIds: string[] = [commentId];
     const queue: string[] = [commentId];
-    
-    while (queue.length > 0){
+
+    while (queue.length > 0) {
       const parentId = queue.pop();
       const replies = await this.commentRepository.find({ parentId }, { _id: 1 }, { lean: true });
 
-      if (replies.length > 0){
+      if (replies.length > 0) {
         const replyIds = replies.map(reply => String(reply._id));
         toDeleteIds.push(...replyIds);
         queue.push(...replyIds);
@@ -159,9 +159,9 @@ class AdminService {
 
     // 🧹 Fetch all attachments for cleanup (only non-null ones)
     const allComments = await this.commentRepository.find(
-      { 
-        _id: { $in: toDeleteIds }, 
-        "attachment.public_id": { $exists: true, $ne: null }  
+      {
+        _id: { $in: toDeleteIds },
+        "attachment.public_id": { $exists: true, $ne: null }
       },
       { "attachment.public_id": 1 },
       { lean: true }
@@ -174,9 +174,9 @@ class AdminService {
     // 💣 Delete from DB 
     const deleteResult = await this.commentRepository.deleteMany({ _id: { $in: toDeleteIds } });
 
-    return res.status(200).json({ 
-      success: true, 
-      message: `🗑️ ${deleteResult.deletedCount} comment(s) permanently deleted by admin.` 
+    return res.status(200).json({
+      success: true,
+      message: `🗑️ ${deleteResult.deletedCount} comment(s) permanently deleted by admin.`
     });
   };
 

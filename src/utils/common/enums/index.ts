@@ -17,6 +17,12 @@ export enum PostDeletedBy {
   USER = "user",
   ADMIN = "admin",
 }
+export enum PostPrivacy {
+  PUBLIC = "public",
+  FRIENDS = "friends",
+  ONLY_ME = "only_me",
+}
+
 export enum CommentDeletedBy {
   USER = "user",
   POST = "post",

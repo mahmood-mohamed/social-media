@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { UserRepository } from "../../DB";
+import { BlockedUserRepository, UserRepository } from "../../DB";
 import { BadRequestError, compareHash, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UnauthorizedError } from "../../utils";
 import { IUpdateLoggedInUserPasswordDTO, updateUserEmailDTO } from "./user.dto";
 import cloudinary from "../../config/cloudinary";
@@ -7,11 +7,12 @@ import fs from "fs/promises";
 
 class UserService {
   private readonly userRepository = new UserRepository();
-  constructor() {}
+  private readonly blockedUserRepository = new BlockedUserRepository();
+  constructor() { }
 
   getMyProfile = async (req: Request, res: Response): Promise<Response> => {
     // include only these fields
-    const { 
+    const {
       _id, firstName, lastName, email, gender, profilePicture, createdAt, updatedAt, role, is2faEnabled,
     } = req.user;
     return res.status(200).json({
@@ -38,11 +39,11 @@ class UserService {
       throw new BadRequestError("No file uploaded");
     }
     // Delete previous profile picture from Cloudinary if exists
-    if(user.profilePicture && user.profilePicture.public_id) {
+    if (user.profilePicture && user.profilePicture.public_id) {
       await cloudinary.uploader.destroy(user.profilePicture.public_id).catch(() => null);
     }
     // Upload  new profile picture to Cloudinary
-    const  { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
+    const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
       folder: `social-media/users/${user._id}/profile-picture`,
       resource_type: "image", // Specify the resource type
       transformation: [{ width: 500, height: 500, crop: "thumb", gravity: "face" }], // Optional image transformation
@@ -55,7 +56,7 @@ class UserService {
       { new: true }
     );
     // Delete the local file after upload
-    await fs.unlink(req.file.path).catch(() => null); 
+    await fs.unlink(req.file.path).catch(() => null);
     return res.status(200).json({
       success: true,
       message: "Profile picture updated successfully",
@@ -67,7 +68,7 @@ class UserService {
   };
 
   getProfileById = async (req: Request, res: Response): Promise<Response> => {
-    const { id } = req.params as {id:string}; // getting the user ID from the URL
+    const { id } = req.params as { id: string }; // getting the user ID from the URL
 
     const user = await this.userRepository.findOne(
       { _id: id },  // filtering by user ID
@@ -95,35 +96,69 @@ class UserService {
   };
 
   searchUsers = async (req: Request, res: Response): Promise<Response> => {
-    const { query } = req.query as { query: string };
+    const currentUserId = req.user._id;
 
-    const regex = new RegExp(query, "i"); // 'i' flag for case-insensitive search
+    const query = req.query.query?.toString().trim();
+
+    if (!query) {
+      throw new BadRequestError("Search query is required");
+    }
+    const words = query.trim().split(/\s+/);
+
+    const filter = {
+      $and: words.map(word => ({
+        $or: [
+          { firstName: { $regex: word, $options: "i" } },
+          { lastName: { $regex: word, $options: "i" } },
+        ],
+      })),
+    };
+
+    // users blocked by me or who blocked me
+    const blockedRelations = await this.blockedUserRepository.find({
+      $or: [
+        { blockerId: currentUserId },
+        { blockedId: currentUserId },
+      ],
+    });
+
+    const blockedIds = blockedRelations.map((relation: any) =>
+      relation.blockerId.toString() === currentUserId.toString()
+        ? relation.blockedId
+        : relation.blockerId
+    );
 
     const users = await this.userRepository.find(
       {
-        $or: [
-          { firstName: { $regex: regex } },
-          { lastName: { $regex: regex } },
-        ],
+        _id: {
+          $nin: [currentUserId, ...blockedIds],
+        },
+        ...filter
       },
       {
-        _id: 1,
         firstName: 1,
         lastName: 1,
-        fullName: 1,
-        // profilePicture: 1, // TODO: Add profilePicture
+        profilePicture: 1,
       },
       {
+        sort: {
+          firstName: 1,
+        },
         limit: 10,
+        lean: true,
       }
     );
-    if (!users || users.length === 0) {
-      throw new NotFoundError("User not found");
-    }
+
     return res.status(200).json({
       success: true,
       message: "Users fetched successfully",
-      data: users,
+      data: users.map((user) => ({
+        _id: user._id,
+        fullName: `${user.firstName} ${user.lastName}`,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profilePicture: user.profilePicture,
+      })),
     });
   };
 
@@ -167,8 +202,8 @@ class UserService {
 
     await this.userRepository.update(
       { _id: user._id },
-      { 
-        $set:{
+      {
+        $set: {
           otpOldEmail: await generateHash(otpOldEmail),
           otpNewEmail: await generateHash(otpNewEmail),
           otpExpiryAt: generateExpiryTime(),
@@ -221,7 +256,7 @@ class UserService {
           tempEmail: "",
           otpExpiryAt: "",
         },
-      }    
+      }
     );
     return res.status(200).json(
       {
@@ -237,7 +272,7 @@ class UserService {
     if (user.is2faEnabled) {
       throw new BadRequestError("2FA already enabled");
     }
-    if(user.otpExpiryAt && user.otpExpiryAt > new Date()) {
+    if (user.otpExpiryAt && user.otpExpiryAt > new Date()) {
       throw new BadRequestError("OTP not expired yet");
     }
     const otp = generateOTP();
@@ -266,7 +301,7 @@ class UserService {
 
   enable2fa = async (req: Request, res: Response): Promise<Response> => {
     const user = req.user as IUser;
-    const { otp } = req.body as { otp: string};
+    const { otp } = req.body as { otp: string };
     if (user.otpExpiryAt && user.otpExpiryAt < new Date()) {
       throw new BadRequestError("OTP is expired");
     }

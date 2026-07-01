@@ -1,15 +1,18 @@
 import { ObjectId } from "mongoose";
-import { IAttachment } from "../../utils";
+import { IAttachment, PostPrivacy } from "../../utils";
+
 
 export interface ICreatePostDto {
   content: string;
-  attachments: IAttachment[] | [];
-  mentions: ObjectId[] | []; // [ObjectId]
+  attachments: IAttachment[];
+  mentions: ObjectId[];
+  privacy: PostPrivacy;
 }
 
 export interface IUpdatePostDto {
   content: string;
-  attachments: IAttachment[] | [];
-  mentions: ObjectId[] | [];
+  attachments: IAttachment[];
+  mentions: ObjectId[];
+  privacy: PostPrivacy;
 }
 
