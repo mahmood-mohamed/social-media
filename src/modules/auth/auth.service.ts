@@ -305,7 +305,7 @@ class AuthService {
     sendMail({
       to: user.email,
       subject: "Password Reset OTP",
-      html: otpEmailTemplate(rawOtp, user.firstName),
+      html: otpEmailTemplate(rawOtp, user.firstName, 5), // OTP valid for 5 minutes
     });
     return res.status(200).json({
       success: true,
