@@ -279,8 +279,7 @@ class AuthService {
     });
   };
 
-  forgetPassword = async (req: Request, res: Response): Promise<Response> => {
-    // forget password logic
+  forgotPassword = async (req: Request, res: Response): Promise<Response> => {
     const { email } = req.body;
     const user = await this.userRepository.userExists({ email });
     if (!user) {

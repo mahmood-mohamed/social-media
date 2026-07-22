@@ -11,7 +11,7 @@ router.post('/resend-otp', isValid(AV.emailSchema), authService.resendOTP); //�
 router.post('/login', isValid(AV.loginSchema), authService.login); //✅ Login
 router.post('/confirm-login', isValid(AV.verifyAccountSchema), authService.confirmLogin); //✅ Confirm login
 router.post('/google-login', authService.googleLogin); //🌍 Google login
-router.post('/forget-password', isValid(AV.emailSchema), authService.forgetPassword); // 🔑 Forgot password
+router.post('/forgot-password', isValid(AV.emailSchema), authService.forgotPassword); // 🔑 Forgot password
 router.post('/reset-password', isValid(AV.resetPasswordSchema), authService.resetPassword); // 🔑 Reset password
 
 router.post('/refresh-token', isValid(AV.refreshTokenSchema), authService.refreshToken); //🔃 Refresh token
