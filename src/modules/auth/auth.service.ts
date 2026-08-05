@@ -27,8 +27,10 @@ class AuthService {
     const userExists = await this.userRepository.userExists({
       email: registerDTO.email,
     }); // {User Document} | null
-    if (userExists) {
-      throw new ConflictError("User already exists");
+    if (userExists && userExists.userAgent === UserAgent.GOOGLE) {
+      throw new ConflictError("This email is already registered with Google. Please sign in with Google.");
+    } else if (userExists && userExists.userAgent === UserAgent.LOCAL) {
+      throw new ConflictError("You have already registered with this email.");
     }
     // create user entity from DTO
     const registerResponse = await this.authFactoryService.register(
@@ -126,9 +128,15 @@ class AuthService {
     const user = await this.userRepository.userExists({
       email: loginDTO.email,
     });
+    // check user from different method Google
+    if (user && user.userAgent !== UserAgent.LOCAL) {
+      throw new BadRequestError("You have registered with Google. Please use the appropriate login method.");
+    }
+    // check user not exists
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
     }
+    // check user not verified
     if (!user.isVerified) {
       throw new ForbiddenError(
         "User is not verified. Please check your email for a verification OTP."
@@ -247,8 +255,11 @@ class AuthService {
       existingUser = (await this.userRepository.create(
         user
       )) as unknown as IUser;
+    } else if (userExists.userAgent !== UserAgent.GOOGLE) {
+      // existing user from different method
+      throw new BadRequestError("You have previously registered with Email. Please use the Local login method.");
     } else {
-      // existing user
+      // existing user from same method
       existingUser = userExists;
     }
     const accessToken = generateToken({
@@ -287,7 +298,7 @@ class AuthService {
     }
     if (user.userAgent === UserAgent.GOOGLE) {
       throw new BadRequestError(
-        "You have registered using Google. Please use Google login to access your account."
+        "This account uses Google Sign-In."
       );
     }
     const rawOtp = generateOTP();
@@ -313,8 +324,7 @@ class AuthService {
     });
   };
 
-  resetPassword = async (req: Request, res: Response, next: NextFunction) => {
-    // reset password logic
+  resetPassword = async (req: Request, res: Response) => {
     const resetPasswordDTO: authDTO.IResetPasswordDTO = req.body;
     const user = await this.userRepository.userExists({
       email: resetPasswordDTO.email,
