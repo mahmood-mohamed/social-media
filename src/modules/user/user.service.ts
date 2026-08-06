@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { BlockedUserRepository, UserRepository } from "../../DB";
-import { BadRequestError, compareHash, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UnauthorizedError } from "../../utils";
+import { BadRequestError, compareHash, ForbiddenError, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UnauthorizedError, UserAgent } from "../../utils";
 import { IUpdateLoggedInUserPasswordDTO, updateUserEmailDTO } from "./user.dto";
 import cloudinary from "../../config/cloudinary";
 import fs from "fs/promises";
@@ -165,6 +165,10 @@ class UserService {
   updateLoggedInUserPassword = async (req: Request, res: Response): Promise<Response> => {
     const updatePasswordDTO: IUpdateLoggedInUserPasswordDTO = req.body;
     const user = req.user as IUser;
+
+    if (user.userAgent === UserAgent.GOOGLE) {
+      throw new ForbiddenError("You are not allowed to update your password using local credentials. Please use Google sign-in.");
+    }
 
     if (!(await compareHash(updatePasswordDTO.password, user.password))) {
       throw new BadRequestError("Current password is incorrect");
