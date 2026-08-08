@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { BlockedUserRepository, UserRepository } from "../../DB";
-import { BadRequestError, compareHash, ForbiddenError, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UnauthorizedError, UserAgent } from "../../utils";
+import { BadRequestError, compareHash, ForbiddenError, generateExpiryTime, generateHash, generateOTP, IUser, NotFoundError, otpEmailTemplate, sendMail, UserAgent } from "../../utils";
 import { IUpdateLoggedInUserPasswordDTO, updateUserEmailDTO } from "./user.dto";
 import cloudinary from "../../config/cloudinary";
 import fs from "fs/promises";
@@ -192,6 +192,9 @@ class UserService {
     const user = req.user as IUser;
     const { email } = req.body;
 
+    if (user.userAgent !== UserAgent.LOCAL) {
+      throw new ForbiddenError("Email changes are only available for local accounts.");
+    }
     const existingUser = await this.userRepository.findOne({
       email: email,
     });
@@ -273,6 +276,9 @@ class UserService {
   is2faEnabled = async (req: Request, res: Response): Promise<Response> => {
     const user = req.user as IUser;
 
+    if(user.userAgent !== UserAgent.LOCAL){
+      throw new ForbiddenError("Two-factor authentication is only available for local accounts.");
+    }
     if (user.is2faEnabled) {
       throw new BadRequestError("2FA already enabled");
     }
