@@ -14,7 +14,7 @@ export const sendMail = async (mailOptions: MailOptions) => {
       pass: devConfig.emailPassword
     }
   })
-  mailOptions.from = `Social Media App <${devConfig.emailUsername}>`;
+  mailOptions.from = `Connectly <${devConfig.emailUsername}>`;
   return (await transport.sendMail(mailOptions));
 
 };
