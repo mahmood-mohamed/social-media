@@ -42,9 +42,6 @@ export class AuthFactoryService {
     if (!payload) {
       throw new BadRequestError("Invalid Google token");
     }
-
-    console.log( "<<< payload from google login >>> ", payload );
-    
     user.firstName = payload.given_name as string;
     user.lastName = payload.family_name as string;
     user.email = payload.email as string;

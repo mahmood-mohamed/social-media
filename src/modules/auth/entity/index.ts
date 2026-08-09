@@ -10,7 +10,6 @@ export class UserEntity {
   public role!: UserRoles;
   public userAgent!: UserAgent;
   public gender!: Gender;
-  // public profilePictureUrl!: string;
   public credentialUpdatedAt!: Date;
   public otp!: string;
   public otpExpiryAt!: Date;
